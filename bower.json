@@ -1,5 +1,6 @@
 {
-  "name": "todomvc-jquery",
+  "name": "Github todo",
+  "description": "A github issues tracker based on todomvc.",
   "dependencies": {
     "todomvc-common": "~0.1.11",
     "jquery": "~2.1.1",

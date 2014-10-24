@@ -1,0 +1,15 @@
+{
+  "name": "githubIssuesTodo",
+  "version": "0.0.1",
+  "description": "interact with github issues",
+  "author": "Phillip Wilt & Sunny Mittal",
+  "devDependencies": {
+    "chai": "*",
+    "coffeeify": "^0.7.0",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^3.1.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "mocha": "^1.21.5"
+  },
+  "dependencies": {}
+}
