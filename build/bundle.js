@@ -214,14 +214,13 @@ jQuery(function($) {
 },{}],2:[function(require,module,exports){
 jQuery(function($) {
   var GithubIssues;
-  GithubIssues = {
+  return GithubIssues = {
     getIssues: function(user, repo) {
       return $.get("https://api.github.com/repos/" + user + "/" + repo + "/issues?state=open", function(res) {
         return console.log(res);
       });
     }
   };
-  return GithubIssues.getIssues('philwilt', 'contactlist');
 });
 
 
