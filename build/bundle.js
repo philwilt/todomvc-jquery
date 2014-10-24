@@ -212,16 +212,16 @@ jQuery(function($) {
 
 
 },{}],2:[function(require,module,exports){
-var GithubIssues;
-
-GithubIssues = (function() {
-  function GithubIssues() {}
-
-  return GithubIssues;
-
-})();
-
-exports.GithubIssues = GithubIssues;
+jQuery(function($) {
+  var GithubIssues;
+  return GithubIssues = {
+    getIssues: function(user, repo) {
+      return $.get("https://api.github.com/repos/" + user + "/" + repo + "/issues?state=open", function(res) {
+        return console.log(res);
+      });
+    }
+  };
+});
 
 
 
