@@ -1,4 +1,10 @@
-class GithubIssues
+jQuery ($) ->
 
+  GithubIssues =
 
-exports.GithubIssues = GithubIssues
+    getIssues: (user, repo) ->
+      $.get "https://api.github.com/repos/#{user}/#{repo}/issues?state=open", (res) ->
+        console.log(res)
+
+  GithubIssues.getIssues('philwilt', 'contactlist')
+
