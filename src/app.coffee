@@ -41,7 +41,6 @@ jQuery ($) ->
         @render()
         return
       ).bind(this)).init "/all"
-      return
 
     cacheElements: ->
       @todoTemplate = Handlebars.compile($("#todo-template").html())
@@ -55,7 +54,6 @@ jQuery ($) ->
       @$todoList = @$main.find("#todo-list")
       @$count = @$footer.find("#todo-count")
       @$clearBtn = @$footer.find("#clear-completed")
-      return
 
     bindEvents: ->
       list = @$todoList
@@ -67,7 +65,6 @@ jQuery ($) ->
       list.on "keyup", ".edit", @editKeyup.bind(this)
       list.on "focusout", ".edit", @update.bind(this)
       list.on "click", ".destroy", @destroy.bind(this)
-      return
 
     render: ->
       todos = @getFilteredTodos()
@@ -77,7 +74,6 @@ jQuery ($) ->
       @renderFooter()
       @$newTodo.focus()
       util.store "todos-jquery", @todos
-      return
 
     renderFooter: ->
       todoCount = @todos.length
@@ -89,16 +85,12 @@ jQuery ($) ->
         filter: @filter
       )
       @$footer.toggle(todoCount > 0).html template
-      return
 
     toggleAll: (e) ->
       isChecked = $(e.target).prop("checked")
       @todos.forEach (todo) ->
         todo.completed = isChecked
-        return
-
       @render()
-      return
 
     getActiveTodos: ->
       @todos.filter (todo) ->
@@ -119,7 +111,6 @@ jQuery ($) ->
       @todos = @getActiveTodos()
       @filter = "all"
       @render()
-      return
 
 
     # accepts an element from inside the `.item` div and
@@ -128,8 +119,8 @@ jQuery ($) ->
       id = $(el).closest("li").data("id")
       todos = @todos
       i = todos.length
-      return i  if todos[i].id is id  while i--
-      return
+      while i--
+      	return i if (todos[i].id is id)
 
     create: (e) ->
       $input = $(e.target)
@@ -142,23 +133,21 @@ jQuery ($) ->
 
       $input.val ""
       @render()
-      return
 
     toggle: (e) ->
       i = @indexFromEl(e.target)
+      console.log @todos
+      console.log i
       @todos[i].completed = not @todos[i].completed
       @render()
-      return
 
     edit: (e) ->
       $input = $(e.target).closest("li").addClass("editing").find(".edit")
       $input.val($input.val()).focus()
-      return
 
     editKeyup: (e) ->
       e.target.blur()  if e.which is ENTER_KEY
       $(e.target).data("abort", true).blur()  if e.which is ESCAPE_KEY
-      return
 
     update: (e) ->
       el = e.target
@@ -174,12 +163,9 @@ jQuery ($) ->
       else
         @todos.splice i, 1
       @render()
-      return
 
     destroy: (e) ->
       @todos.splice @indexFromEl(e.target), 1
       @render()
-      return
 
   App.init()
-  return

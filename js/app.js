@@ -1,185 +1,211 @@
-#global jQuery, Handlebars
-jQuery ($) ->
-  "use strict"
-  Handlebars.registerHelper "eq", (a, b, options) ->
-    (if a is b then options.fn(this) else options.inverse(this))
+/*global jQuery, Handlebars */
+jQuery(function ($) {
+  'use strict';
 
-  ENTER_KEY = 13
-  ESCAPE_KEY = 27
-  util =
-    uuid: ->
+  Handlebars.registerHelper('eq', function(a, b, options) {
+    return a === b ? options.fn(this) : options.inverse(this);
+  });
 
-      #jshint bitwise:false
-      i = undefined
-      random = undefined
-      uuid = ""
-      i = 0
-      while i < 32
-        random = Math.random() * 16 | 0
-        uuid += "-"  if i is 8 or i is 12 or i is 16 or i is 20
-        uuid += ((if i is 12 then 4 else ((if i is 16 then (random & 3 | 8) else random)))).toString(16)
-        i++
-      uuid
+  var ENTER_KEY = 13;
+  var ESCAPE_KEY = 27;
 
-    pluralize: (count, word) ->
-      (if count is 1 then word else word + "s")
+  var util = {
+    uuid: function () {
+      /*jshint bitwise:false */
+      var i, random;
+      var uuid = '';
 
-    store: (namespace, data) ->
-      if arguments.length > 1
-        localStorage.setItem namespace, JSON.stringify(data)
-      else
-        store = localStorage.getItem(namespace)
-        (store and JSON.parse(store)) or []
+      for (i = 0; i < 32; i++) {
+        random = Math.random() * 16 | 0;
+        if (i === 8 || i === 12 || i === 16 || i === 20) {
+          uuid += '-';
+        }
+        uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
+      }
 
-  App =
-    init: ->
-      @todos = util.store("todos-jquery")
-      @cacheElements()
-      @bindEvents()
-      Router("/:filter": ((filter) ->
-        @filter = filter
-        @render()
-        return
-      ).bind(this)).init "/all"
-      return
+      return uuid;
+    },
+    pluralize: function (count, word) {
+      return count === 1 ? word : word + 's';
+    },
+    store: function (namespace, data) {
+      if (arguments.length > 1) {
+        return localStorage.setItem(namespace, JSON.stringify(data));
+      } else {
+        var store = localStorage.getItem(namespace);
+        return (store && JSON.parse(store)) || [];
+      }
+    }
+  };
 
-    cacheElements: ->
-      @todoTemplate = Handlebars.compile($("#todo-template").html())
-      @footerTemplate = Handlebars.compile($("#footer-template").html())
-      @$todoApp = $("#todoapp")
-      @$header = @$todoApp.find("#header")
-      @$main = @$todoApp.find("#main")
-      @$footer = @$todoApp.find("#footer")
-      @$newTodo = @$header.find("#new-todo")
-      @$toggleAll = @$main.find("#toggle-all")
-      @$todoList = @$main.find("#todo-list")
-      @$count = @$footer.find("#todo-count")
-      @$clearBtn = @$footer.find("#clear-completed")
-      return
+  var App = {
+    init: function () {
+      this.todos = util.store('todos-jquery');
+      this.cacheElements();
+      this.bindEvents();
 
-    bindEvents: ->
-      list = @$todoList
-      @$newTodo.on "keyup", @create.bind(this)
-      @$toggleAll.on "change", @toggleAll.bind(this)
-      @$footer.on "click", "#clear-completed", @destroyCompleted.bind(this)
-      list.on "change", ".toggle", @toggle.bind(this)
-      list.on "dblclick", "label", @edit.bind(this)
-      list.on "keyup", ".edit", @editKeyup.bind(this)
-      list.on "focusout", ".edit", @update.bind(this)
-      list.on "click", ".destroy", @destroy.bind(this)
-      return
+      Router({
+        '/:filter': function (filter) {
+          this.filter = filter;
+          this.render();
+        }.bind(this)
+      }).init('/all');
+    },
+    cacheElements: function () {
+      this.todoTemplate = Handlebars.compile($('#todo-template').html());
+      this.footerTemplate = Handlebars.compile($('#footer-template').html());
+      this.$todoApp = $('#todoapp');
+      this.$header = this.$todoApp.find('#header');
+      this.$main = this.$todoApp.find('#main');
+      this.$footer = this.$todoApp.find('#footer');
+      this.$newTodo = this.$header.find('#new-todo');
+      this.$toggleAll = this.$main.find('#toggle-all');
+      this.$todoList = this.$main.find('#todo-list');
+      this.$count = this.$footer.find('#todo-count');
+      this.$clearBtn = this.$footer.find('#clear-completed');
+    },
+    bindEvents: function () {
+      var list = this.$todoList;
+      this.$newTodo.on('keyup', this.create.bind(this));
+      this.$toggleAll.on('change', this.toggleAll.bind(this));
+      this.$footer.on('click', '#clear-completed', this.destroyCompleted.bind(this));
+      list.on('change', '.toggle', this.toggle.bind(this));
+      list.on('dblclick', 'label', this.edit.bind(this));
+      list.on('keyup', '.edit', this.editKeyup.bind(this));
+      list.on('focusout', '.edit', this.update.bind(this));
+      list.on('click', '.destroy', this.destroy.bind(this));
+    },
+    render: function () {
+      var todos = this.getFilteredTodos();
+      this.$todoList.html(this.todoTemplate(todos));
+      this.$main.toggle(todos.length > 0);
+      this.$toggleAll.prop('checked', this.getActiveTodos().length === 0);
+      this.renderFooter();
+      this.$newTodo.focus();
+      util.store('todos-jquery', this.todos);
+    },
+    renderFooter: function () {
+      var todoCount = this.todos.length;
+      var activeTodoCount = this.getActiveTodos().length;
+      var template = this.footerTemplate({
+        activeTodoCount: activeTodoCount,
+        activeTodoWord: util.pluralize(activeTodoCount, 'item'),
+        completedTodos: todoCount - activeTodoCount,
+        filter: this.filter
+      });
 
-    render: ->
-      todos = @getFilteredTodos()
-      @$todoList.html @todoTemplate(todos)
-      @$main.toggle todos.length > 0
-      @$toggleAll.prop "checked", @getActiveTodos().length is 0
-      @renderFooter()
-      @$newTodo.focus()
-      util.store "todos-jquery", @todos
-      return
+      this.$footer.toggle(todoCount > 0).html(template);
+    },
+    toggleAll: function (e) {
+      var isChecked = $(e.target).prop('checked');
 
-    renderFooter: ->
-      todoCount = @todos.length
-      activeTodoCount = @getActiveTodos().length
-      template = @footerTemplate(
-        activeTodoCount: activeTodoCount
-        activeTodoWord: util.pluralize(activeTodoCount, "item")
-        completedTodos: todoCount - activeTodoCount
-        filter: @filter
-      )
-      @$footer.toggle(todoCount > 0).html template
-      return
+      this.todos.forEach(function (todo) {
+        todo.completed = isChecked;
+      });
 
-    toggleAll: (e) ->
-      isChecked = $(e.target).prop("checked")
-      @todos.forEach (todo) ->
-        todo.completed = isChecked
-        return
+      this.render();
+    },
+    getActiveTodos: function () {
+      return this.todos.filter(function (todo) {
+        return !todo.completed;
+      });
+    },
+    getCompletedTodos: function () {
+      return this.todos.filter(function (todo) {
+        return todo.completed;
+      });
+    },
+    getFilteredTodos: function () {
+      if (this.filter === 'active') {
+        return this.getActiveTodos();
+      }
 
-      @render()
-      return
+      if (this.filter === 'completed') {
+        return this.getCompletedTodos();
+      }
 
-    getActiveTodos: ->
-      @todos.filter (todo) ->
-        not todo.completed
+      return this.todos;
+    },
+    destroyCompleted: function () {
+      this.todos = this.getActiveTodos();
+      this.filter = 'all';
+      this.render();
+    },
+    // accepts an element from inside the `.item` div and
+    // returns the corresponding index in the `todos` array
+    indexFromEl: function (el) {
+      var id = $(el).closest('li').data('id');
+      var todos = this.todos;
+      var i = todos.length;
 
+      while (i--) {
+        if (todos[i].id === id) {
+          return i;
+        }
+      }
+    },
+    create: function (e) {
+      var $input = $(e.target);
+      var val = $input.val().trim();
 
-    getCompletedTodos: ->
-      @todos.filter (todo) ->
-        todo.completed
+      if (e.which !== ENTER_KEY || !val) {
+        return;
+      }
 
-
-    getFilteredTodos: ->
-      return @getActiveTodos()  if @filter is "active"
-      return @getCompletedTodos()  if @filter is "completed"
-      @todos
-
-    destroyCompleted: ->
-      @todos = @getActiveTodos()
-      @filter = "all"
-      @render()
-      return
-
-
-    # accepts an element from inside the `.item` div and
-    # returns the corresponding index in the `todos` array
-    indexFromEl: (el) ->
-      id = $(el).closest("li").data("id")
-      todos = @todos
-      i = todos.length
-      return i  if todos[i].id is id  while i--
-      return
-
-    create: (e) ->
-      $input = $(e.target)
-      val = $input.val().trim()
-      return  if e.which isnt ENTER_KEY or not val
-      @todos.push
-        id: util.uuid()
-        title: val
+      this.todos.push({
+        id: util.uuid(),
+        title: val,
         completed: false
+      });
 
-      $input.val ""
-      @render()
-      return
+      $input.val('');
 
-    toggle: (e) ->
-      i = @indexFromEl(e.target)
-      @todos[i].completed = not @todos[i].completed
-      @render()
-      return
+      this.render();
+    },
+    toggle: function (e) {
+      var i = this.indexFromEl(e.target);
+      this.todos[i].completed = !this.todos[i].completed;
+      this.render();
+    },
+    edit: function (e) {
+      var $input = $(e.target).closest('li').addClass('editing').find('.edit');
+      $input.val($input.val()).focus();
+    },
+    editKeyup: function (e) {
+      if (e.which === ENTER_KEY) {
+        e.target.blur();
+      }
 
-    edit: (e) ->
-      $input = $(e.target).closest("li").addClass("editing").find(".edit")
-      $input.val($input.val()).focus()
-      return
+      if (e.which === ESCAPE_KEY) {
+        $(e.target).data('abort', true).blur();
+      }
+    },
+    update: function (e) {
+      var el = e.target;
+      var $el = $(el);
+      var val = $el.val().trim();
 
-    editKeyup: (e) ->
-      e.target.blur()  if e.which is ENTER_KEY
-      $(e.target).data("abort", true).blur()  if e.which is ESCAPE_KEY
-      return
+      if ($el.data('abort')) {
+        $el.data('abort', false);
+        this.render();
+        return;
+      }
 
-    update: (e) ->
-      el = e.target
-      $el = $(el)
-      val = $el.val().trim()
-      if $el.data("abort")
-        $el.data "abort", false
-        @render()
-        return
-      i = @indexFromEl(el)
-      if val
-        @todos[i].title = val
-      else
-        @todos.splice i, 1
-      @render()
-      return
+      var i = this.indexFromEl(el);
 
-    destroy: (e) ->
-      @todos.splice @indexFromEl(e.target), 1
-      @render()
-      return
+      if (val) {
+        this.todos[i].title = val;
+      } else {
+        this.todos.splice(i, 1);
+      }
 
-  App.init()
-  return
+      this.render();
+    },
+    destroy: function (e) {
+      this.todos.splice(this.indexFromEl(e.target), 1);
+      this.render();
+    }
+  };
+
+  App.init();
+});
